@@ -1,47 +1,35 @@
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
 
-#include <X11/Xutil.h>
+#include <iostream>
 
-#include <stdio.h>
-#include <dlfcn.h>
+int main() {
+    glfwInit();
 
-#include <vulkan/vulkan.h>
-#include <vulkan/vk_sdk_platform.h>
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 
-#define APP_SHORT_NAME "shadertoy"
-#define APP_LONG_NAME "Vulkan Shadertoy Harness"
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
+    std::cout << extensionCount << " extensions supported" << std::endl;
 
-uint32_t enabled_layer_count = 0;
-uint32_t enabled_extension_count = 0;
-char extension_names[64] = {0};
-char **instance_validation_layers = NULL;
-VkInstance inst;
+    glm::mat4 matrix;
+    glm::vec4 vec;
+    auto test = matrix * vec;
 
-int main(int argc, char** argv) {
+    while(!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+    }
 
-	VkResult err;
-	
-  VkApplicationInfo app;
-  app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  app.pNext = NULL;
-  app.pApplicationName = APP_SHORT_NAME;
-  app.applicationVersion = 0;
-  app.pEngineName = APP_SHORT_NAME;
-  app.engineVersion = 0;
-  app.apiVersion = VK_API_VERSION_1_0;
-  
-  VkInstanceCreateInfo inst_info;
-  inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-  inst_info.pNext = NULL;
-  inst_info.pApplicationInfo = &app;
-  inst_info.enabledLayerCount = enabled_layer_count;
-  inst_info.ppEnabledLayerNames = (const char *const *)instance_validation_layers;
-  inst_info.enabledExtensionCount = enabled_extension_count;
-  inst_info.ppEnabledExtensionNames = (const char *const *)extension_names;
+    glfwDestroyWindow(window);
 
+    glfwTerminate();
 
-	err = vkCreateInstance(&inst_info, NULL, &inst);
-
-	return 0;
+    return 0;
 }
