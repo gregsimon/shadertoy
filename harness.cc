@@ -1,4 +1,5 @@
 // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers
+// http://www.glfw.org/docs/latest/vulkan_guide.html
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -64,10 +65,18 @@ private:
   VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
   VkDevice _device; // logical device
   VkQueue _graphicsQueue;
+  VkSurfaceKHR _surface;
+
 
 
   void initWindow() {
     glfwInit();
+
+    if (!glfwVulkanSupported()) {
+      throw std::runtime_error("this GLFW does not support vulkan!");
+    }
+
+
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // don't use GL
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // disable window resize
     _window = glfwCreateWindow(WIDTH, HEIGHT, "Shadertoy", nullptr, nullptr);
@@ -77,6 +86,7 @@ private:
   void initVulkan() {
     createInstance();
     setupDebugCallback();
+    createSurface();
     pickPhysicalDevice();
     createLogicalDevice();
   }
@@ -197,6 +207,15 @@ private:
 
   }
 
+  void createSurface() {
+    VkSurfaceKHR surface;
+    VkResult err = glfwCreateWindowSurface(_instance, _window, NULL, &_surface);
+    if (err) {
+        throw std::runtime_error("failed to create window surface!");
+    }
+
+  }
+
   void setupDebugCallback() {
     if (!enableValidationLayers) return;
 
@@ -267,6 +286,8 @@ private:
   }
 
   void cleanup() {
+    vkDestroySurfaceKHR(_instance, _surface, nullptr);
+
     vkDestroyDevice(_device, nullptr);
     vkDestroyInstance(_instance, nullptr);
 
