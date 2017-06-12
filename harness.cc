@@ -35,6 +35,14 @@ void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT
     }
 }
 
+struct QueueFamilyIndices {
+    int graphicsFamily = -1;
+
+    bool isComplete() {
+        return graphicsFamily >= 0;
+    }
+};
+
 
 
 // -----------------------------------------------------------------------------------------
@@ -53,6 +61,7 @@ private:
   GLFWwindow* _window;
   VkInstance _instance;
   VkDebugReportCallbackEXT _callback;
+  VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
 
 
   void initWindow() {
@@ -66,7 +75,62 @@ private:
   void initVulkan() {
     createInstance();
     setupDebugCallback();
+    pickPhysicalDevice();
   }
+
+  void pickPhysicalDevice() {
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(_instance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+      throw std::runtime_error("failed to find GPUs with Vulkan support!");
+    }
+
+    std::cout << deviceCount << " Vulkan devices(s)" << std::endl;
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
+    for (const auto& device : devices) {
+      if (isDeviceSuitable(device)) {
+          _physicalDevice = device;
+          break;
+      }
+    }
+
+    if (_physicalDevice == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to find a suitable GPU!");
+    }
+  }
+
+  bool isDeviceSuitable(VkPhysicalDevice device) {
+    QueueFamilyIndices indices = findQueueFamilies(device);
+    return indices.isComplete();
+  }
+
+  QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+      if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        indices.graphicsFamily = i;
+      }
+
+      if (indices.isComplete()) {
+        break;
+      }
+
+      i++;
+    }
+
+
+    return indices;
+  }
+
 
   void createInstance() {
     if (enableValidationLayers && !checkValidationLayerSupport()) {
