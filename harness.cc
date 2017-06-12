@@ -1,5 +1,5 @@
-// https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers
 // http://www.glfw.org/docs/latest/vulkan_guide.html
+// https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -22,28 +22,34 @@ const std::vector<const char*> validationLayers = {
 const bool enableValidationLayers = false;
 
 VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
-    auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pCallback);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
+  auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
+  if (func != nullptr) {
+    return func(instance, pCreateInfo, pAllocator, pCallback);
+  } else {
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
+  }
 }
 
 void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
-    if (func != nullptr) {
-        func(instance, callback, pAllocator);
-    }
+  auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+  if (func != nullptr) {
+    func(instance, callback, pAllocator);
+  }
 }
 
 struct QueueFamilyIndices {
-    int graphicsFamily = -1;
-    int presentFamily = -1;
+  int graphicsFamily = -1;
+  int presentFamily = -1;
 
-    bool isComplete() {
-        return graphicsFamily >= 0 && presentFamily >= 0;
-    }
+  bool isComplete() {
+      return graphicsFamily >= 0 && presentFamily >= 0;
+  }
+};
+
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
 
@@ -70,7 +76,10 @@ private:
   VkSurfaceKHR _surface;
   VkQueue _presentQueue;
 
-
+  typedef std::vector<const char*> DeviceExtensionsList;
+  const DeviceExtensionsList _deviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  };
 
   void initWindow() {
     glfwInit();
@@ -118,7 +127,61 @@ private:
 
   bool isDeviceSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
-    return indices.isComplete();
+    bool extensionsSupported = checkDeviceExtensionSupport(device);
+
+    bool swapChainAdequate = false;
+    if (extensionsSupported) {
+      SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+      swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
+    return indices.isComplete() && extensionsSupported && swapChainAdequate;
+  }
+
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(_deviceExtensions.begin(), _deviceExtensions.end());
+    for (DeviceExtensionsList::const_iterator it=_deviceExtensions.begin(); it != _deviceExtensions.end(); ++it) {
+      std::cout << "ext: " << std::string(*it) << std::endl;
+    }
+
+    for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+  }
+
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+    SwapChainSupportDetails details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, _surface, &details.capabilities);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, _surface, &formatCount, nullptr);
+
+    if (formatCount != 0) {
+      details.formats.resize(formatCount);
+      vkGetPhysicalDeviceSurfaceFormatsKHR(device, _surface, &formatCount, details.formats.data());
+    }
+
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, _surface, &presentModeCount, nullptr);
+
+    if (presentModeCount != 0) {
+      details.presentModes.resize(presentModeCount);
+      vkGetPhysicalDeviceSurfacePresentModesKHR(device, _surface, &presentModeCount, details.presentModes.data());
+    }
+
+
+
+
+    return details;
   }
 
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
@@ -178,7 +241,8 @@ private:
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(_deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = _deviceExtensions.data();
     
     if (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
