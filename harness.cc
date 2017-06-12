@@ -63,6 +63,7 @@ private:
   VkDebugReportCallbackEXT _callback;
   VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
   VkDevice _device; // logical device
+  VkQueue _graphicsQueue;
 
 
   void initWindow() {
@@ -160,6 +161,7 @@ private:
       throw std::runtime_error("failed to create logical device!");
     }
 
+    vkGetDeviceQueue(_device, indices.graphicsFamily, 0, &_graphicsQueue);
   }
 
 
