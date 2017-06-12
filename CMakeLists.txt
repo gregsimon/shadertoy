@@ -1,6 +1,8 @@
 # shaderspy harness
+# apt-get install libglm-dev
+# https://github.com/glfw/glfw -> build
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 2.8)
 
 find_package(PkgConfig REQUIRED)
 find_package(X11 REQUIRED)
