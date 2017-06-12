@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <functional>
 #include <vector>
+#include <set>
 #include <string.h>
 
 const int WIDTH = 800;
@@ -38,9 +39,10 @@ void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT
 
 struct QueueFamilyIndices {
     int graphicsFamily = -1;
+    int presentFamily = -1;
 
     bool isComplete() {
-        return graphicsFamily >= 0;
+        return graphicsFamily >= 0 && presentFamily >= 0;
     }
 };
 
@@ -66,6 +68,7 @@ private:
   VkDevice _device; // logical device
   VkQueue _graphicsQueue;
   VkSurfaceKHR _surface;
+  VkQueue _presentQueue;
 
 
 
@@ -129,8 +132,15 @@ private:
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
-      if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+      VkBool32 presentSupport = false;
+      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, _surface, &presentSupport);
+
+      if (queueFamily.queueCount > 0 &&  queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
         indices.graphicsFamily = i;
+      }
+
+      if (queueFamily.queueCount > 0 && presentSupport) {
+          indices.presentFamily = i;
       }
 
       if (indices.isComplete()) {
@@ -145,33 +155,45 @@ private:
 
   void createLogicalDevice() {
     QueueFamilyIndices indices = findQueueFamilies(_physicalDevice);
-    VkDeviceQueueCreateInfo queueCreateInfo = {};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
-    queueCreateInfo.queueCount = 1;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<int> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
+
     float queuePriority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    for (int queueFamily : uniqueQueueFamilies) {
+      VkDeviceQueueCreateInfo queueCreateInfo = {};
+      queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+      queueCreateInfo.queueFamilyIndex = queueFamily;
+      queueCreateInfo.queueCount = 1;
+      queueCreateInfo.pQueuePriorities = &queuePriority;
+      queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+
     createInfo.pEnabledFeatures = &deviceFeatures;
+
     createInfo.enabledExtensionCount = 0;
+    
     if (enableValidationLayers) {
-      createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-      createInfo.ppEnabledLayerNames = validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
     } else {
-      createInfo.enabledLayerCount = 0;
+        createInfo.enabledLayerCount = 0;
     }
 
     if (vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create logical device!");
-    }
+            throw std::runtime_error("failed to create logical device!");
+        }
+
 
     vkGetDeviceQueue(_device, indices.graphicsFamily, 0, &_graphicsQueue);
+    vkGetDeviceQueue(_device, indices.presentFamily, 0, &_presentQueue);
   }
 
 
@@ -213,6 +235,7 @@ private:
     if (err) {
         throw std::runtime_error("failed to create window surface!");
     }
+
 
   }
 
