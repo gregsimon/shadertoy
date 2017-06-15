@@ -95,7 +95,7 @@ private:
   std::vector<VkFramebuffer> _swapChainFramebuffers;
 
   VkCommandPool _commandPool;
-
+  std::vector<VkCommandBuffer> _commandBuffers;
 
 
 
@@ -131,6 +131,51 @@ private:
     createGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
+    createCommandBuffers();
+  }
+
+  void createCommandBuffers() {
+    _commandBuffers.resize(_swapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = _commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t) _commandBuffers.size();
+
+    if (vkAllocateCommandBuffers(_device, &allocInfo, _commandBuffers.data()) != VK_SUCCESS) {
+      throw std::runtime_error("failed to allocate command buffers!");
+    }
+
+    for (size_t i = 0; i < _commandBuffers.size(); i++) {
+      VkCommandBufferBeginInfo beginInfo = {};
+      beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+      beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+      beginInfo.pInheritanceInfo = nullptr; // Optional
+
+      vkBeginCommandBuffer(_commandBuffers[i], &beginInfo);
+   
+      VkRenderPassBeginInfo renderPassInfo = {};
+      renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+      renderPassInfo.renderPass = _renderPass;
+      renderPassInfo.framebuffer = _swapChainFramebuffers[i];
+
+      VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+      renderPassInfo.clearValueCount = 1;
+      renderPassInfo.pClearValues = &clearColor;
+
+      vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
+
+        vkCmdDraw(_commandBuffers[i], 3, 1, 0, 0);
+
+      vkCmdEndRenderPass(_commandBuffers[i]);
+
+      if (vkEndCommandBuffer(_commandBuffers[i]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer!");
+      }
+    }
   }
 
   void createCommandPool() {
