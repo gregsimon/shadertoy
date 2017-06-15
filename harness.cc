@@ -94,6 +94,12 @@ private:
 
   std::vector<VkFramebuffer> _swapChainFramebuffers;
 
+  VkCommandPool _commandPool;
+
+
+
+
+
   typedef std::vector<const char*> DeviceExtensionsList;
   const DeviceExtensionsList _deviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -124,6 +130,20 @@ private:
     createRenderPass();
     createGraphicsPipeline();
     createFramebuffers();
+    createCommandPool();
+  }
+
+  void createCommandPool() {
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(_physicalDevice);
+
+    VkCommandPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
+    poolInfo.flags = 0; // Optional
+
+    if (vkCreateCommandPool(_device, &poolInfo, nullptr, &_commandPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create command pool!");
+    }
   }
 
   void createFramebuffers() {
@@ -770,6 +790,8 @@ private:
   }
 
   void cleanup() {
+    vkDestroyCommandPool(_device, _commandPool, nullptr);
+
     for (size_t i = 0; i < _swapChainFramebuffers.size(); i++) {
         vkDestroyFramebuffer(_device, _swapChainFramebuffers[i], nullptr);
     }
