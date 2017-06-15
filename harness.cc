@@ -713,7 +713,8 @@ private:
       uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
       uboLayoutBinding.descriptorCount = 1;
       uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-      uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+
 
       VkDescriptorSetLayoutCreateInfo layoutInfo = {};
       layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -728,18 +729,20 @@ private:
     }
 
     void createGraphicsPipeline() {
-        auto vertShaderCode = readFile("vert.spv");
-        auto fragShaderCode = readFile("frag.spv");
+        auto vertShaderCode = readFile("shaders/vert.spv");
+        auto fragShaderCode = readFile("shaders/seascape.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
+        // vertex shader
         VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         vertShaderStageInfo.module = vertShaderModule;
         vertShaderStageInfo.pName = "main";
 
+        // fragment shader
         VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
         fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;

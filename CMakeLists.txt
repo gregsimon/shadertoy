@@ -10,15 +10,21 @@ find_package(X11 REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 
 
-add_custom_command(OUTPUT vert.spv 
-    COMMAND glslangValidator -V shaders/shader.vert
+add_custom_command(OUTPUT shaders/vert.spv 
+    COMMAND glslangValidator -V shaders/shader.vert -o shaders/vert.spv
     DEPENDS shaders/shader.vert)
-set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS vert.spv)
+set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/vert.spv)
 
-add_custom_command(OUTPUT frag.spv 
-    COMMAND glslangValidator -V shaders/shader.frag
-    DEPENDS shaders/shader.frag)
-set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS frag.spv)
+#add_custom_command(OUTPUT frag.spv 
+#    COMMAND glslangValidator -V shaders/shader.frag
+#    DEPENDS shaders/shader.frag)
+#set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS frag.spv)
+
+
+add_custom_command(OUTPUT shaders/seascape.spv 
+    COMMAND glslangValidator -V shaders/seascape.frag -o shaders/seascape.spv
+    DEPENDS shaders/seascape.frag)
+set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/seascape.spv)
 
 
 
