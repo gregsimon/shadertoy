@@ -97,6 +97,8 @@ private:
   VkCommandPool _commandPool;
   std::vector<VkCommandBuffer> _commandBuffers;
 
+  VkSemaphore _imageAvailableSemaphore;
+  VkSemaphore _renderFinishedSemaphore;
 
 
 
@@ -132,6 +134,20 @@ private:
     createFramebuffers();
     createCommandPool();
     createCommandBuffers();
+    createSemaphores();
+  }
+
+  void createSemaphores() {
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(_device, &semaphoreInfo, nullptr, &_imageAvailableSemaphore) != VK_SUCCESS ||
+      vkCreateSemaphore(_device, &semaphoreInfo, nullptr, &_renderFinishedSemaphore) != VK_SUCCESS) {
+
+      throw std::runtime_error("failed to create semaphores!");
+    }
+
+
   }
 
   void createCommandBuffers() {
@@ -831,10 +847,21 @@ private:
   void mainLoop() {
     while (!glfwWindowShouldClose(_window)) {
       glfwPollEvents();
+      drawFrame();
     }
   }
 
+  void drawFrame() {
+    // 1. Acquire an image from the swap chain
+    // 2. Execute the command buffer with that image as attachment in the framebuffer
+    // 3. Return the image to the swap chain for presentation
+ 
+  }
+
   void cleanup() {
+    vkDestroySemaphore(_device, _renderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(_device, _imageAvailableSemaphore, nullptr);
+
     vkDestroyCommandPool(_device, _commandPool, nullptr);
 
     for (size_t i = 0; i < _swapChainFramebuffers.size(); i++) {
