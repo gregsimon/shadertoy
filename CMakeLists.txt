@@ -10,15 +10,22 @@ find_package(X11 REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 
 
+add_custom_command(OUTPUT vert.spv 
+    COMMAND glslangValidator -V shaders/shader.vert
+    DEPENDS shaders/shader.vert)
+set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS vert.spv)
+
+add_custom_command(OUTPUT frag.spv 
+    COMMAND glslangValidator -V shaders/shader.frag
+    DEPENDS shaders/shader.frag)
+set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS frag.spv)
+
 
 
 include_directories($ENV{VULKAN_SDK}/include)
 LINK_DIRECTORIES($ENV{VULKAN_SDK}/lib)
 
-
-
 SET(CMAKE_CXX_FLAGS "-std=c++11") 
-
 
 add_executable(harness harness.cc)
 
