@@ -167,6 +167,9 @@ private:
     VkBuffer _uniformBuffer;
     VkDeviceMemory _uniformBufferMemory;
 
+    VkDescriptorPool _descriptorPool;
+    VkDescriptorSet _descriptorSet;
+
 
     void initWindow() {
         glfwInit();
@@ -195,6 +198,8 @@ private:
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffer();
+        createDescriptorPool();
+        createDescriptorSet();
         createCommandBuffers();
         createSemaphores();
     }
@@ -248,6 +253,8 @@ private:
 
     void cleanup() {
       cleanupSwapChain();
+
+      vkDestroyDescriptorPool(device, _descriptorPool, nullptr);
 
       vkDestroyDescriptorSetLayout(device, _descriptorSetLayout, nullptr);
       vkDestroyBuffer(device, _uniformBuffer, nullptr);
@@ -443,6 +450,57 @@ private:
       VkDeviceSize bufferSize = sizeof(UniformBufferObject);
       createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _uniformBuffer, _uniformBufferMemory);
+    }
+
+    void createDescriptorPool() {
+      VkDescriptorPoolSize poolSize = {};
+      poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      poolSize.descriptorCount = 1;
+
+      VkDescriptorPoolCreateInfo poolInfo = {};
+      poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+      poolInfo.poolSizeCount = 1;
+      poolInfo.pPoolSizes = &poolSize;
+
+      poolInfo.maxSets = 1;
+
+      if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+      }
+
+    }
+
+    void createDescriptorSet() {
+      VkDescriptorSetLayout layouts[] = {_descriptorSetLayout};
+      VkDescriptorSetAllocateInfo allocInfo = {};
+      allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+      allocInfo.descriptorPool = _descriptorPool;
+      allocInfo.descriptorSetCount = 1;
+      allocInfo.pSetLayouts = layouts;
+
+      // allocate one descriptor set with one uniform buffer descriptor
+      if (vkAllocateDescriptorSets(device, &allocInfo, &_descriptorSet) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor set!");
+      }
+
+      VkDescriptorBufferInfo bufferInfo = {};
+      bufferInfo.buffer = _uniformBuffer;
+      bufferInfo.offset = 0;
+      bufferInfo.range = sizeof(UniformBufferObject);
+
+      VkWriteDescriptorSet descriptorWrite = {};
+      descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      descriptorWrite.dstSet = _descriptorSet;
+      descriptorWrite.dstBinding = 0;
+      descriptorWrite.dstArrayElement = 0;
+      descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      descriptorWrite.descriptorCount = 1;
+
+      descriptorWrite.pBufferInfo = &bufferInfo;
+      descriptorWrite.pImageInfo = nullptr; // Optional
+      descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+      vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
 
     void setupDebugCallback() {
@@ -734,7 +792,7 @@ private:
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
         VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -865,6 +923,9 @@ private:
           vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
           vkCmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+          vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, 
+            _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
 
           vkCmdDrawIndexed(_commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
