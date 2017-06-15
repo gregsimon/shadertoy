@@ -4,8 +4,11 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define GLM_FORCE_RADIANS
 #include "glm/glm/glm.hpp"
+#include "glm/glm/gtc/matrix_transform.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -161,6 +164,9 @@ private:
     VkBuffer _indexBuffer;
     VkDeviceMemory _indexBufferMemory;
 
+    VkBuffer _uniformBuffer;
+    VkDeviceMemory _uniformBufferMemory;
+
 
     void initWindow() {
         glfwInit();
@@ -188,6 +194,7 @@ private:
         createCommandPool();
         createVertexBuffer();
         createIndexBuffer();
+        createUniformBuffer();
         createCommandBuffers();
         createSemaphores();
     }
@@ -195,10 +202,30 @@ private:
     void mainLoop() {
         while (!glfwWindowShouldClose(_window)) {
             glfwPollEvents();
+
+            updateUniformBuffer();
             drawFrame();
         }
 
         vkDeviceWaitIdle(device);
+    }
+
+    void updateUniformBuffer() {
+      static auto startTime = std::chrono::high_resolution_clock::now();
+
+      auto currentTime = std::chrono::high_resolution_clock::now();
+      float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+
+      UniformBufferObject ubo = {};
+      ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+      ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+      ubo.proj = glm::perspective(glm::radians(45.0f), _swapChainExtent.width / (float) _swapChainExtent.height, 0.1f, 10.0f);
+      ubo.proj[1][1] *= -1;
+
+      void* data;
+      vkMapMemory(device, _uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+          memcpy(data, &ubo, sizeof(ubo));
+      vkUnmapMemory(device, _uniformBufferMemory);
     }
 
     void cleanupSwapChain() {
@@ -223,6 +250,8 @@ private:
       cleanupSwapChain();
 
       vkDestroyDescriptorSetLayout(device, _descriptorSetLayout, nullptr);
+      vkDestroyBuffer(device, _uniformBuffer, nullptr);
+      vkFreeMemory(device, _uniformBufferMemory, nullptr);
 
       vkDestroyBuffer(device, _indexBuffer, nullptr);
       vkFreeMemory(device, _indexBufferMemory, nullptr);
@@ -408,6 +437,12 @@ private:
 
       vkDestroyBuffer(device, stagingBuffer, nullptr);
       vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
+    void createUniformBuffer() {
+      VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+      createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _uniformBuffer, _uniformBufferMemory);
     }
 
     void setupDebugCallback() {
