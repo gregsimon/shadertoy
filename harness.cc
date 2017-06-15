@@ -97,9 +97,14 @@ struct Vertex {
 };
 
 const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0
 };
 
 
@@ -122,8 +127,8 @@ private:
     VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 
-    VkQueue _graphicSqueue;
-    VkQueue _presenTqueue;
+    VkQueue _graphicsQueue;
+    VkQueue _presentQueue;
     
     VkSwapchainKHR _swapChain;
     std::vector<VkImage> _swapChainImages;
@@ -170,6 +175,7 @@ private:
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createIndexBuffer();
         createCommandBuffers();
         createSemaphores();
     }
@@ -276,36 +282,57 @@ private:
     }
 
     void createVertexBuffer() {
-      VkBufferCreateInfo bufferInfo = {};
-      bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-      bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-      bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-      bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+      VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
-      if (vkCreateBuffer(device, &bufferInfo, nullptr, &_vertexBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create vertex buffer!");
-      }
-
-       VkMemoryRequirements memRequirements;
-      vkGetBufferMemoryRequirements(device, _vertexBuffer, &memRequirements);
-
-      VkMemoryAllocateInfo allocInfo = {};
-      allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-      allocInfo.allocationSize = memRequirements.size;
-      allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-      if (vkAllocateMemory(device, &allocInfo, nullptr, &_vertexBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
-      }
-
-      vkBindBufferMemory(device, _vertexBuffer, _vertexBufferMemory, 0);
+      VkBuffer stagingBuffer;
+      VkDeviceMemory stagingBufferMemory;
+      createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
       void* data;
-      vkMapMemory(device, _vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-          memcpy(data, vertices.data(), (size_t) bufferInfo.size);
-      vkUnmapMemory(device, _vertexBufferMemory);
+      vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+          memcpy(data, vertices.data(), (size_t) bufferSize);
+      vkUnmapMemory(device, stagingBufferMemory);
+
+      createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _vertexBuffer, _vertexBufferMemory);
+
+      copyBuffer(stagingBuffer, _vertexBuffer, bufferSize);
+
+      vkDestroyBuffer(device, stagingBuffer, nullptr);
+      vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+      VkCommandBufferAllocateInfo allocInfo = {};
+      allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+      allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+      allocInfo.commandPool = _commandPool;
+      allocInfo.commandBufferCount = 1;
+
+      VkCommandBuffer commandBuffer;
+      vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+      VkCommandBufferBeginInfo beginInfo = {};
+      beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+      beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+      vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+          VkBufferCopy copyRegion = {};
+          copyRegion.size = size;
+          vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+      vkEndCommandBuffer(commandBuffer);
+
+      VkSubmitInfo submitInfo = {};
+      submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+      submitInfo.commandBufferCount = 1;
+      submitInfo.pCommandBuffers = &commandBuffer;
+
+      vkQueueSubmit(_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+      vkQueueWaitIdle(_graphicsQueue);
+
+      vkFreeCommandBuffers(device, _commandPool, 1, &commandBuffer);
+    }
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
       VkPhysicalDeviceMemoryProperties memProperties;
@@ -318,6 +345,53 @@ private:
       }
 
       throw std::runtime_error("failed to find suitable memory type!");
+    }
+
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+      VkBufferCreateInfo bufferInfo = {};
+      bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+      bufferInfo.size = size;
+      bufferInfo.usage = usage;
+      bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+      if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+          throw std::runtime_error("failed to create buffer!");
+      }
+
+      VkMemoryRequirements memRequirements;
+      vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+
+      VkMemoryAllocateInfo allocInfo = {};
+      allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+      allocInfo.allocationSize = memRequirements.size;
+      allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+      if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+          throw std::runtime_error("failed to allocate buffer memory!");
+      }
+
+      vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    }
+
+    void createIndexBuffer() {
+  /*    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+      VkBuffer stagingBuffer;
+      VkDeviceMemory stagingBufferMemory;
+      createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+      void* data;
+      vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+      memcpy(data, indices.data(), (size_t) bufferSize);
+      vkUnmapMemory(device, stagingBufferMemory);
+
+      createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+      copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+      vkDestroyBuffer(device, stagingBuffer, nullptr);
+      vkFreeMemory(device, stagingBufferMemory, nullptr);
+      */
     }
 
     void setupDebugCallback() {
@@ -402,8 +476,8 @@ private:
             throw std::runtime_error("failed to create logical device!");
         }
 
-        vkGetDeviceQueue(device, indices.graphicsFamily, 0, &_graphicSqueue);
-        vkGetDeviceQueue(device, indices.presentFamily, 0, &_presenTqueue);
+        vkGetDeviceQueue(device, indices.graphicsFamily, 0, &_graphicsQueue);
+        vkGetDeviceQueue(device, indices.presentFamily, 0, &_presentQueue);
     }
 
     void createSwapChain() {
@@ -766,7 +840,7 @@ private:
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(_graphicSqueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        if (vkQueueSubmit(_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -782,7 +856,7 @@ private:
 
         presentInfo.pImageIndices = &imageIndex;
 
-        result = vkQueuePresentKHR(_presenTqueue, &presentInfo);
+        result = vkQueuePresentKHR(_presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
             recreateSwapChain();
@@ -790,7 +864,7 @@ private:
             throw std::runtime_error("failed to present swap chain image!");
         }
 
-        vkQueueWaitIdle(_presenTqueue);
+        vkQueueWaitIdle(_presentQueue);
     }
 
     VkShaderModule createShaderModule(const std::vector<char>& code) {
