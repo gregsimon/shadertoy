@@ -20,7 +20,7 @@ LINK_DIRECTORIES($ENV{VULKAN_SDK}/lib)
 SET(CMAKE_CXX_FLAGS "-std=c++11") 
 
 
-add_executable(harness triangle.cc)
+add_executable(harness harness.cc)
 
 target_link_libraries(harness ${GLFW_LIBRARIES} ${X11_LIBRARIES} 
   libXrandr.so libXi.so libXinerama.so libXcursor.so libvulkan.so libdl.so libpthread.so)
