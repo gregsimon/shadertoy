@@ -14,8 +14,8 @@ const int HEIGHT = 600;
 
 class ShaderToyVulkanHarnessGLFW : public ShaderToyVulkanHarness {
 public:
-  ShaderToyVulkanHarnessGLFW(GLFWwindow* win, int width, int height) 
-    : ShaderToyVulkanHarness(width, height),_window(win) {}
+  ShaderToyVulkanHarnessGLFW(GLFWwindow* win, bool validating) 
+    : ShaderToyVulkanHarness(validating),_window(win) {}
   ~ShaderToyVulkanHarnessGLFW() {}
 
   virtual VkSurfaceKHR createSurface(VkInstance inst) {
@@ -66,12 +66,12 @@ int main() {
   GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Shadertoy Vulkan", nullptr, nullptr);
 
   try {
-    shadertoy = new ShaderToyVulkanHarnessGLFW(window, WIDTH, HEIGHT);
+    shadertoy = new ShaderToyVulkanHarnessGLFW(window,/* validating = */ true);
  
     glfwSetWindowUserPointer(window, shadertoy);
     glfwSetWindowSizeCallback(window, onWindowResized);
 
-    shadertoy->initVulkan();
+    shadertoy->init(WIDTH, HEIGHT);
 
     // Main loop
     while (!glfwWindowShouldClose(window)) {

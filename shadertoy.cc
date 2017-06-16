@@ -24,12 +24,6 @@ const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
 std::vector<char> readFile(const std::string& filename);
 
 VkResult CreateDebugReportCallbackEXT(VkInstance _instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
@@ -47,8 +41,6 @@ void DestroyDebugReportCallbackEXT(VkInstance _instance, VkDebugReportCallbackEX
         func(_instance, _debugCallback, pAllocator);
     }
 }
-
-
 
 struct Vertex {
   glm::vec2 pos;
@@ -105,11 +97,8 @@ struct UniformBufferObject {
 };
 
 
-
-
-ShaderToyVulkanHarness::ShaderToyVulkanHarness(int width, int height)
-  : _width(width), _height(height) {
-    _isValidating = enableValidationLayers;
+ShaderToyVulkanHarness::ShaderToyVulkanHarness(bool bValidating)
+  : _isValidating(bValidating){
 }
 
 ShaderToyVulkanHarness::~ShaderToyVulkanHarness() {
@@ -117,26 +106,29 @@ ShaderToyVulkanHarness::~ShaderToyVulkanHarness() {
   cleanup();
 }
 
-void ShaderToyVulkanHarness::initVulkan() {
-    createInstance();
-    setupDebugCallback();
-    _surface = createSurface(_instance);
-    pickPhysicalDevice();
-    createLogicalDevice();
-    createSwapChain();
-    createImageViews();
-    createRenderPass();
-    createDescriptorSetLayout();
-    createGraphicsPipeline();
-    createFramebuffers();
-    createCommandPool();
-    createVertexBuffer();
-    createIndexBuffer();
-    createUniformBuffer();
-    createDescriptorPool();
-    createDescriptorSet();
-    createCommandBuffers();
-    createSemaphores();
+void ShaderToyVulkanHarness::init(int width, int height) {
+  _width = width;
+  _height = height;
+
+  createInstance();
+  setupDebugCallback();
+  _surface = createSurface(_instance);  
+  pickPhysicalDevice();
+  createLogicalDevice();
+  createSwapChain();
+  createImageViews();
+  createRenderPass();
+  createDescriptorSetLayout();
+  createGraphicsPipeline();
+  createFramebuffers();
+  createCommandPool();
+  createVertexBuffer();
+  createIndexBuffer();
+  createUniformBuffer();
+  createDescriptorPool();
+  createDescriptorSet();
+  createCommandBuffers();
+  createSemaphores();
 }
 
 
@@ -221,7 +213,7 @@ void ShaderToyVulkanHarness::recreateSwapChain() {
 }
 
 void ShaderToyVulkanHarness::createInstance() {
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
+    if (isValidating() && !checkValidationLayerSupport()) {
         throw std::runtime_error("validation layers requested, but not available!");
     }
 
@@ -241,7 +233,7 @@ void ShaderToyVulkanHarness::createInstance() {
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
-    if (enableValidationLayers) {
+    if (isValidating()) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
     } else {
@@ -423,7 +415,7 @@ void ShaderToyVulkanHarness::createDescriptorSet() {
 }
 
 void ShaderToyVulkanHarness::setupDebugCallback() {
-    if (!enableValidationLayers) return;
+    if (!isValidating()) return;
 
     VkDebugReportCallbackCreateInfoEXT createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
@@ -487,7 +479,7 @@ void ShaderToyVulkanHarness::createLogicalDevice() {
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (enableValidationLayers) {
+    if (isValidating()) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
     } else {
