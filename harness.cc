@@ -1,5 +1,4 @@
 // Vulkan Harness to run Vulkan-compatible Shadertoy shaders
-// https://vulkan-tutorial.com/Vertex_buffers
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -125,7 +124,7 @@ struct UniformBufferObject {
 
 
 
-class HelloTriangleApplication {
+class ShaderToyVulkanHarness {
 public:
     void run() {
         initWindow();
@@ -185,7 +184,7 @@ private:
         _window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 
         glfwSetWindowUserPointer(_window, this);
-        glfwSetWindowSizeCallback(_window, HelloTriangleApplication::onWindowResized);
+        glfwSetWindowSizeCallback(_window, ShaderToyVulkanHarness::onWindowResized);
     }
 
     void initVulkan() {
@@ -294,7 +293,7 @@ private:
     static void onWindowResized(GLFWwindow* window, int width, int height) {
         if (width == 0 || height == 0) return;
         
-        HelloTriangleApplication* app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        ShaderToyVulkanHarness* app = reinterpret_cast<ShaderToyVulkanHarness*>(glfwGetWindowUserPointer(window));
         app->recreateSwapChain();
     }
 
@@ -738,7 +737,7 @@ private:
 
     void createGraphicsPipeline() {
         auto vertShaderCode = readFile("shaders/shadertoy.spv");
-        auto fragShaderCode = readFile("shaders/city.spv");
+        auto fragShaderCode = readFile("shaders/cartoon.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -1233,7 +1232,7 @@ private:
 };
 
 int main() {
-    HelloTriangleApplication app;
+    ShaderToyVulkanHarness app;
 
     try {
         app.run();
