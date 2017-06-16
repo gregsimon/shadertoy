@@ -15,10 +15,10 @@ add_custom_command(OUTPUT shaders/vert.spv
     DEPENDS shaders/shader.vert)
 set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/vert.spv)
 
-#add_custom_command(OUTPUT frag.spv 
-#    COMMAND glslangValidator -V shaders/shader.frag
-#    DEPENDS shaders/shader.frag)
-#set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS frag.spv)
+add_custom_command(OUTPUT shaders/frag.spv 
+    COMMAND glslangValidator -V shaders/shader.frag -o shaders/frag.spv
+    DEPENDS shaders/shader.frag)
+set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/frag.spv)
 
 
 add_custom_command(OUTPUT shaders/seascape.spv 
