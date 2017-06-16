@@ -1,6 +1,21 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec3 iResolution;
+    float iGlobalTime;
+    vec3 iMouse;
+} ubo;
+vec3 iResolution = ubo.iResolution;
+float iGlobalTime = ubo.iGlobalTime;
+vec3 iMouse = ubo.iMouse;
+float iChannel1 = 1.0;
+
+layout(location = 0) out vec4 outColor;
+
 // "Fractal Cartoon" - former "DE edge detection" by Kali
 
 // Cartoon-like effect using eiffies's edge detection found here: 
@@ -11,19 +26,6 @@
 // There are no lights and no AO, only color by normals and dark edges.
 
 // update: Nyan Cat cameo, thanks to code from mu6k: https://www.shadertoy.com/view/4dXGWH
-
-layout(binding = 0) uniform UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-    vec3 iResolution;
-    float iGlobalTime;
-    vec3 iMouse;
-} ubo;
-
-layout(location = 0) out vec4 outColor;
-
-const float iChannel1 = 1.0;
 
 //#define SHOWONLYEDGES
 //#define NYAN 
@@ -38,7 +40,7 @@ const float iChannel1 = 1.0;
 
 
 #define detail .001
-#define t ubo.iGlobalTime*.5
+#define t iGlobalTime*.5
 
 
 const vec3 origin=vec3(-1.,.7,0.);
@@ -133,8 +135,8 @@ vec4 nyan(vec2 p)
 {
   vec2 uv = p*vec2(0.4,1.0);
   float ns=3.0;
-  float nt = ubo.iGlobalTime*ns; nt-=mod(nt,240.0/256.0/6.0); nt = mod(nt,240.0/256.0);
-  float ny = mod(ubo.iGlobalTime*ns,1.0); ny-=mod(ny,0.75); ny*=-0.05;
+  float nt = iGlobalTime*ns; nt-=mod(nt,240.0/256.0/6.0); nt = mod(nt,240.0/256.0);
+  float ny = mod(iGlobalTime*ns,1.0); ny-=mod(ny,0.75); ny*=-0.05;
   vec4 color = texture(iChannel1,vec2(uv.x/3.0+210.0/256.0-nt+0.05,.5-uv.y-ny));
   if (uv.x<-0.3) color.a = 0.0;
   if (uv.x>0.2) color.a=0.0;
@@ -172,7 +174,7 @@ vec3 raymarch(in vec3 from, in vec3 dir)
   dir.y-=.02;
   //float sunsize=7.-max(0.,texture(iChannel0,vec2(.6,.2)).x)*5.; // responsive sun size
   float sunsize=7.0; // sun not responsive.
-  float an=atan(dir.x,dir.y)+ubo.iGlobalTime*1.5; // angle for drawing and rotating sun
+  float an=atan(dir.x,dir.y)+iGlobalTime*1.5; // angle for drawing and rotating sun
   float s=pow(clamp(1.0-length(dir.xy)*sunsize-abs(.2-mod(an,.4)),0.,1.),.1); // sun
   float sb=pow(clamp(1.0-length(dir.xy)*(sunsize-.2)-abs(.2-mod(an,.4)),0.,1.),.1); // sun border
   float sg=pow(clamp(1.0-length(dir.xy)*(sunsize-4.5)-.5*abs(.2-mod(an,.4)),0.,1.),3.); // sun rays
@@ -220,12 +222,12 @@ vec3 move(inout vec3 dir) {
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-  vec2 uv = fragCoord.xy / ubo.iResolution.xy*2.-1.;
+  vec2 uv = fragCoord.xy / iResolution.xy*2.-1.;
   vec2 oriuv=uv;
-  uv.y*=ubo.iResolution.y/ubo.iResolution.x;
-  vec2 mouse=(ubo.iMouse.xy/ubo.iResolution.xy-.5)*3.;
-  if (ubo.iMouse.z<1.) mouse=vec2(0.,-0.05);
-  float fov=.9-max(0.,.7-ubo.iGlobalTime*.3);
+  uv.y*=iResolution.y/iResolution.x;
+  vec2 mouse=(iMouse.xy/iResolution.xy-.5)*3.;
+  if (iMouse.z<1.) mouse=vec2(0.,-0.05);
+  float fov=.9-max(0.,.7-iGlobalTime*.3);
   vec3 dir=normalize(vec3(uv*fov,1.));
   dir.yz*=rot(mouse.y);
   dir.xz*=rot(mouse.x);

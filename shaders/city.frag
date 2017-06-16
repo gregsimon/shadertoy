@@ -1,6 +1,20 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec3 iResolution;
+    float iGlobalTime;
+    vec3 iMouse;
+} ubo;
+vec3 iResolution = ubo.iResolution;
+float iGlobalTime = ubo.iGlobalTime;
+vec3 iMouse = ubo.iMouse;
+float iChannel1 = 1.0;
+
+layout(location = 0) out vec4 outColor;
 /*--------------------------------------------------------------------------------------
 License CC0 - http://creativecommons.org/publicdomain/zero/1.0/
 To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
@@ -17,19 +31,6 @@ const float frameToRenderHQ = 50.0; // Time in seconds of frame to render
 const float antialiasingSamples = 16.0; // 16x antialiasing - too much might make the shader compiler angry.
 
 //#define MANUAL_CAMERA
-
-
-layout(binding = 0) uniform UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-    vec3 iResolution;
-    float iGlobalTime;
-    vec3 iMouse;
-} ubo;
-
- layout(location = 0) out vec4 outColor;
-
 
 // --------------------------------------------------------
 // These variables are for the non-realtime block renderer.
@@ -257,7 +258,7 @@ vec2 CityBlock(vec3 p, vec2 pint)
     height *= downtown;
     height *= 1.5+(baseRad-0.15)*20.0;
     height += 0.1;  // minimum building height
-    //height += sin(ubo.iGlobalTime + pint.x);  // animate the building heights if you're feeling silly
+    //height += sin(iGlobalTime + pint.x);  // animate the building heights if you're feeling silly
     height = floor(height*20.0)*0.05; // height is in floor units - each floor is 0.05 high.
   float d = sdBox(baseCenter, vec3(baseRad, height, baseRad)); // large building piece
 
@@ -406,7 +407,7 @@ vec3 RayTrace(in vec2 fragCoord )
   vec3 camPos, camUp, camLookat;
   // ------------------- Set up the camera rays for ray marching --------------------
     // Map uv to [-1.0..1.0]
-  vec2 uv = fragCoord.xy/ubo.iResolution.xy * 2.0 - 1.0;
+  vec2 uv = fragCoord.xy/iResolution.xy * 2.0 - 1.0;
     uv /= 2.0;  // zoom in
 
 #ifdef MANUAL_CAMERA
@@ -417,8 +418,8 @@ vec3 RayTrace(in vec2 fragCoord )
   camLookat=vec3(0,0.0,0);
 
     // debugging camera
-    float mx=-ubo.iMouse.x/ubo.iResolution.x*PI*2.0;// + localTime * 0.05;
-  float my=ubo.iMouse.y/ubo.iResolution.y*3.14*0.5 + PI/2.0;// + sin(localTime * 0.3)*0.8+0.1;//*PI/2.01;
+    float mx=-iMouse.x/iResolution.x*PI*2.0;// + localTime * 0.05;
+  float my=iMouse.y/iResolution.y*3.14*0.5 + PI/2.0;// + sin(localTime * 0.3)*0.8+0.1;//*PI/2.01;
   camPos = vec3(cos(my)*cos(mx),sin(my),cos(my)*sin(mx))*7.35;//7.35
 #else
     // Do the camera fly-by animation and different scenes.
@@ -516,7 +517,7 @@ vec3 RayTrace(in vec2 fragCoord )
   vec3 sideNorm=normalize(cross(camUp, camVec));
   vec3 upNorm=cross(camVec, sideNorm);
   vec3 worldFacing=(camPos + camVec);
-  vec3 worldPix = worldFacing + uv.x * sideNorm * (ubo.iResolution.x/ubo.iResolution.y) + uv.y * upNorm;
+  vec3 worldPix = worldFacing + uv.x * sideNorm * (iResolution.x/iResolution.y) + uv.y * upNorm;
   vec3 rayVec = normalize(worldPix - camPos);
 
   // ----------------------------- Ray march the scene ------------------------------
@@ -779,7 +780,7 @@ vec3 RayTrace(in vec2 fragCoord )
             // low-res way of making lines at the edges of car windows. Not sure I like it.
             yfade *= (saturate(1.0-abs(dFdx(windowMask)*dFdy(windowMask))*250.995));
             finalColor += GetEnvMapSkyline(ref, sunDir, pos.y-1.5)*0.3*yfade*max(0.4,sunShadow);
-            //finalColor += saturate(texture(ubo.iChannel0, ref).xyz-0.35)*0.15*max(0.2,sunShadow);
+            //finalColor += saturate(texture(iChannel0, ref).xyz-0.35)*0.15*max(0.2,sunShadow);
         }
         // reflections for building windows
         if (windowRef != 0.0)
@@ -787,7 +788,7 @@ vec3 RayTrace(in vec2 fragCoord )
             finalColor *= mix(1.0, 0.6, windowRef);
             float yfade = max(0.01, min(1.0, ref.y*100.0));
             finalColor += GetEnvMapSkyline(ref, sunDir, pos.y-0.5)*0.6*yfade*max(0.6,sunShadow)*windowRef;//*(windowMask*0.5+0.5);
-            //finalColor += saturate(texture(ubo.iChannel0, ref).xyz-0.35)*0.15*max(0.25,sunShadow)*windowRef;
+            //finalColor += saturate(texture(iChannel0, ref).xyz-0.35)*0.15*max(0.25,sunShadow)*windowRef;
         }
         finalColor *= 0.9;
         // fog that fades to reddish plus the sun color so that fog is brightest towards sun
@@ -830,8 +831,8 @@ void BlockRender(in vec2 fragCoord)
     // faster render times.
     const float blockSize = 64.0;
     // Make the block repeatedly scan across the image based on time.
-    float frame = floor(ubo.iGlobalTime * blockRate);
-    vec2 blockRes = floor(ubo.iResolution.xy / blockSize) + vec2(1.0);
+    float frame = floor(iGlobalTime * blockRate);
+    vec2 blockRes = floor(iResolution.xy / blockSize) + vec2(1.0);
     // ugly bug with mod.
     //float blockX = mod(frame, blockRes.x);
     float blockX = fract(frame / blockRes.x) * blockRes.x;
@@ -881,7 +882,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     finalColor /= antialiasingSamples;
 #else
     // Regular real-time rendering
-    localTime = ubo.iGlobalTime;
+    localTime = iGlobalTime;
     finalColor = RayTrace(fragCoord);
 #endif
 
