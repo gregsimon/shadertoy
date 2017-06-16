@@ -731,8 +731,6 @@ private:
       if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
       }
-
-
     }
 
     void createGraphicsPipeline() {
