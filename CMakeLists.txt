@@ -10,21 +10,16 @@ find_package(X11 REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 
 
-add_custom_command(OUTPUT shaders/vert.spv 
-    COMMAND glslangValidator -V shaders/shader.vert -o shaders/vert.spv
-    DEPENDS shaders/shader.vert)
-set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/vert.spv)
+function (add_shader in_name out_name)
+  add_custom_command(OUTPUT ${out_name} COMMAND glslangValidator -V ${in_name} -o ${out_name} DEPENDS ${in_name})
+  set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS ${out_name})
+endfunction(add_shader)
 
-add_custom_command(OUTPUT shaders/frag.spv 
-    COMMAND glslangValidator -V shaders/shader.frag -o shaders/frag.spv
-    DEPENDS shaders/shader.frag)
-set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/frag.spv)
+# shaders we want to compile
 
-
-add_custom_command(OUTPUT shaders/seascape.spv 
-    COMMAND glslangValidator -V shaders/seascape.frag -o shaders/seascape.spv
-    DEPENDS shaders/seascape.frag)
-set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS shaders/seascape.spv)
+add_shader(shaders/shadertoy.vert shaders/shadertoy.spv)
+add_shader(shaders/seascape.frag shaders/seascape.spv)
+add_shader(shaders/city.frag shaders/city.spv)
 
 
 
