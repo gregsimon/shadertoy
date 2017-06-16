@@ -12,7 +12,7 @@ pkg_search_module(GLFW REQUIRED glfw3)
 
 function (add_shader in_name out_name)
   add_custom_command(OUTPUT ${out_name} COMMAND glslangValidator -V ${in_name} -o ${out_name} DEPENDS ${in_name})
-  set_property(SOURCE harness.cc APPEND PROPERTY OBJECT_DEPENDS ${out_name})
+  set_property(SOURCE shadertoy.cc APPEND PROPERTY OBJECT_DEPENDS ${out_name})
 endfunction(add_shader)
 
 # shaders we want to compile
@@ -30,7 +30,7 @@ LINK_DIRECTORIES($ENV{VULKAN_SDK}/lib)
 
 SET(CMAKE_CXX_FLAGS "-std=c++11") 
 
-add_executable(harness harness.cc)
+add_executable(harness shadertoy.cc main_glfw.cc)
 
 target_link_libraries(harness ${GLFW_LIBRARIES} ${X11_LIBRARIES} 
   libXrandr.so libXi.so libXinerama.so libXcursor.so libvulkan.so libdl.so libpthread.so)
