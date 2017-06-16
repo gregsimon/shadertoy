@@ -631,7 +631,7 @@ void ShaderToyVulkanHarness::createDescriptorSetLayout() {
 
 void ShaderToyVulkanHarness::createGraphicsPipeline() {
     auto vertShaderCode = readFile("shaders/shadertoy.spv");
-    auto fragShaderCode = readFile("shaders/seascape.spv");
+    auto fragShaderCode = readFile("shaders/cartoon.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
