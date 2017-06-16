@@ -114,6 +114,12 @@ struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
+
+    // Shadertoy globals, we
+    // stuff them into the UBO.
+    glm::vec3 iResolution;
+    float iGlobalTime;
+    glm::vec4 iMouse;
 };
 
 
@@ -226,6 +232,10 @@ private:
       ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
       ubo.proj = glm::perspective(glm::radians(45.0f), _swapChainExtent.width / (float) _swapChainExtent.height, 0.1f, 10.0f);
       ubo.proj[1][1] *= -1;
+
+      ubo.iResolution = glm::vec3(_swapChainExtent.width, _swapChainExtent.height, 1.0f);
+      ubo.iGlobalTime = time;
+      ubo.iMouse = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
       void* data;
       vkMapMemory(device, _uniformBufferMemory, 0, sizeof(ubo), 0, &data);
@@ -712,9 +722,7 @@ private:
       uboLayoutBinding.binding = 0;
       uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
       uboLayoutBinding.descriptorCount = 1;
-      uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-
+      uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT;
 
       VkDescriptorSetLayoutCreateInfo layoutInfo = {};
       layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -730,7 +738,7 @@ private:
 
     void createGraphicsPipeline() {
         auto vertShaderCode = readFile("shaders/vert.spv");
-        auto fragShaderCode = readFile("shaders/frag.spv");
+        auto fragShaderCode = readFile("shaders/seascape.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);

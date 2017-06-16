@@ -17,10 +17,14 @@
     uniform float     iSampleRate;           // sound sample rate (i.e., 44100)
 
  */
-
- layout(location = 1) in vec3 iResolution;
- layout(location = 2) in float iGlobalTime;
- layout(location = 3) in vec4 iMouse;
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec3 iResolution;
+    float iGlobalTime;
+    vec3 iMouse;
+} ubo;
 
  layout(location = 0) out vec4 outColor;
 
@@ -28,7 +32,7 @@
 const int NUM_STEPS = 8;
 const float PI    = 3.141592;
 const float EPSILON = 1e-3;
-#define EPSILON_NRM (0.1 / iResolution.x)
+#define EPSILON_NRM (0.1 / ubo.iResolution.x)
 
 // sea
 const int ITER_GEOMETRY = 3;
@@ -39,7 +43,7 @@ const float SEA_SPEED = 0.8;
 const float SEA_FREQ = 0.16;
 const vec3 SEA_BASE = vec3(0.1,0.19,0.22);
 const vec3 SEA_WATER_COLOR = vec3(0.8,0.9,0.6);
-#define SEA_TIME (1.0 + iGlobalTime * SEA_SPEED)
+#define SEA_TIME (1.0 + ubo.iGlobalTime * SEA_SPEED)
 const mat2 octave_m = mat2(1.6,1.2,-1.2,1.6);
 
 // math
@@ -177,10 +181,10 @@ float heightMapTracing(vec3 ori, vec3 dir, out vec3 p) {
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) 
 {
-  vec2 uv = fragCoord / iResolution.xy;
+  vec2 uv = fragCoord / ubo.iResolution.xy;
     uv = uv * 2.0 - 1.0;
-    uv.x *= iResolution.x / iResolution.y;    
-    float time = iGlobalTime * 0.3 + iMouse.x*0.01;
+    uv.x *= ubo.iResolution.x / ubo.iResolution.y;    
+    float time = ubo.iGlobalTime * 0.3 + ubo.iMouse.x*0.01;
         
     // ray
     vec3 ang = vec3(sin(time*3.0)*0.1,sin(time)*0.2+0.3,time);    
