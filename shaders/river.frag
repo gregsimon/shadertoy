@@ -1,7 +1,6 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -10,9 +9,10 @@ layout(binding = 0) uniform UniformBufferObject {
     float iGlobalTime;
     vec3 iMouse;
 } ubo;
-
- layout(location = 0) out vec4 outColor;
-
+vec3 iResolution = ubo.iResolution;
+float iGlobalTime = ubo.iGlobalTime;
+vec3 iMouse = ubo.iMouse;
+layout(location = 0) out vec4 outColor;
 
 // Where the River Goes
 // @P_Malin
@@ -30,7 +30,7 @@ layout(binding = 0) uniform UniformBufferObject {
 
 
 // Textureless version
-//#define ENABLE_NIMITZ_TRIANGLE_NOISE
+#define ENABLE_NIMITZ_TRIANGLE_NOISE
 
 //#define ENABLE_LANDSCAPE_RECEIVE_SHADOW
 
@@ -345,7 +345,7 @@ vec4 SampleFlowingNormal( const vec2 vUV, const vec2 vFlowRate, const float fFoa
 vec2 GetWindowCoord( const in vec2 vUV )
 {
   vec2 vWindow = vUV * 2.0 - 1.0;
-  vWindow.x *= ubo.iResolution.x / ubo.iResolution.y;
+  vWindow.x *= iResolution.x / iResolution.y;
 
   return vWindow; 
 }
@@ -849,8 +849,8 @@ void BlockRender(in vec2 fragCoord)
 {
     const float blockRate = 15.0;
     const float blockSize = 64.0;
-    float frame = floor(ubo.iGlobalTime * blockRate);
-    vec2 blockRes = floor(ubo.iResolution.xy / blockSize) + vec2(1.0);
+    float frame = floor(iGlobalTime * blockRate);
+    vec2 blockRes = floor(iResolution.xy / blockSize) + vec2(1.0);
     float blockX = fract(frame / blockRes.x) * blockRes.x;
     float blockY = fract(floor(frame / blockRes.x) / blockRes.y) * blockRes.y;
     // Don't draw anything outside the current block.
@@ -865,13 +865,13 @@ void BlockRender(in vec2 fragCoord)
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    g_fTime = ubo.iGlobalTime;
+    g_fTime = iGlobalTime;
 
 #ifdef ENABLE_SCREENSHOT_MODE
     BlockRender( fragCoord.xy );
     float fBaseTime = k_screenshotTime;
 #else
-    float fBaseTime = ubo.iGlobalTime;
+    float fBaseTime = iGlobalTime;
 #endif
     g_fTime = fBaseTime;
     
@@ -880,7 +880,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
   // Static camera locations
     //fCameraTime = 146.0; // some rocks
     
-    vec2 vUV = fragCoord.xy / ubo.iResolution.xy;
+    vec2 vUV = fragCoord.xy / iResolution.xy;
 
   vec3 vCameraTarget = vec3(0.0, -0.5, 0.0);
 
@@ -893,8 +893,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     if( iMouse.z > 0.0 )
     {
-        fHeading = iMouse.x * 10.0 / ubo.iResolution.x;
-        fDist = 5.0 - iMouse.y * 5.0 / ubo.iResolution.y;
+        fHeading = iMouse.x * 10.0 / iResolution.x;
+        fDist = 5.0 - iMouse.y * 5.0 / iResolution.y;
     }
     
     vCameraPos.y += 1.0 + fDist * fDist * 0.01;
@@ -942,7 +942,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 void mainVR( out vec4 fragColor, in vec2 fragCoord, in vec3 fragRayOri, in vec3 fragRayDir )
 {
-    g_fTime = ubo.iGlobalTime;
+    g_fTime = iGlobalTime;
     
     fragRayOri = fragRayOri.zyx;
     fragRayDir = fragRayDir.zyx;
@@ -969,8 +969,9 @@ void mainVR( out vec4 fragColor, in vec2 fragCoord, in vec3 fragRayOri, in vec3 
 
 void main() {
   vec4 color = vec4(0.0,0.0,0.0,1.0);
-  mainImage(color, gl_FragCoord.xy);
-  color.w = 1.0;
+  vec2 swapped_y = {gl_FragCoord.x, iResolution.y-gl_FragCoord.y};
+  mainImage(color, swapped_y);
   outColor = color;
 }
+
 

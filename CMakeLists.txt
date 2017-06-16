@@ -21,7 +21,7 @@ add_shader(shaders/shadertoy.vert shaders/shadertoy.spv)
 add_shader(shaders/seascape.frag shaders/seascape.spv)
 add_shader(shaders/city.frag shaders/city.spv)
 add_shader(shaders/cartoon.frag shaders/cartoon.spv)
-#add_shader(shaders/river.frag shaders/river.spv)
+add_shader(shaders/river.frag shaders/river.spv)
 
 
 
