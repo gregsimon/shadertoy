@@ -241,9 +241,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 void main() {
   vec4 color = vec4(0.0,0.0,0.0,1.0);
-  vec2 swap = {gl_FragCoord.x, iResolution.y-gl_FragCoord.y};
-  mainImage(color, swap);
-  color.w = 1.0;
+  vec2 swapped_y = {gl_FragCoord.x, iResolution.y-gl_FragCoord.y};
+  mainImage(color, swapped_y);
   outColor = color;
 }
 
