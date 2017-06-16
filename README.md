@@ -6,9 +6,7 @@ Basic harness for running shaders from ShaderToy on a Vulkan API. Note the shade
 ```
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
-```
-2. Adding the shader inputs themselves. Right now we are patching these via a UBO:
-```
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -17,11 +15,12 @@ layout(binding = 0) uniform UniformBufferObject {
     float iGlobalTime;
     vec3 iMouse;
 } ubo;
-
- layout(location = 0) out vec4 outColor;
+vec3 iResolution = ubo.iResolution;
+float iGlobalTime = ubo.iGlobalTime;
+vec3 iMouse = ubo.iMouse;
+float iChannel1 = 1.0;
  ```
- 3. Updating the input variable names (iResolution -> ubo.iResolution)
- 4. Creating a main() at the bottom that calls mainImage():
+ 2. Add a footer:
  ```
  void main() {
   vec4 color = vec4(0.0,0.0,0.0,1.0);
@@ -30,6 +29,7 @@ layout(binding = 0) uniform UniformBufferObject {
   outColor = color;
 }
  ```
+3. Optional: remove any shader inputs that aren't supported yet :) e.g., iChannel
 
 ## TODO
 
