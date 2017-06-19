@@ -6,7 +6,7 @@ import("//magma/gnbuild/magma.gni")
 
 use_vulkan_loader = false
 
-executable("shadertoy") {
+executable("shaderharness") {
   include_dirs = [ "." ]
 
   defines = [ "VK_USE_PLATFORM_MAGMA_KHR" ]
@@ -16,9 +16,12 @@ executable("shadertoy") {
     "main_fuchsia.cc",
   ]
 
+  configs -=  [ "//build/config:no_exceptions" ]
+
   deps = [
     "$magma_build_root/src/magma_util",
     "$magma_build_root/src/magma_util/platform:trace",
+    "//magma:vulkan",
   ]
 
   if (magma_enable_tracing) {
@@ -28,7 +31,6 @@ executable("shadertoy") {
     deps += [ "$magma_build_root:vulkan" ]
   } else {
     deps += [
-      "$magma_build_root/tests/vulkan_shim",
       "$mesa_build_root:magma_vulkan",
     ]
   }

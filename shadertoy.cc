@@ -814,7 +814,9 @@ void ShaderToyVulkanHarness::createCommandBuffers() {
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = _swapChainExtent;
 
-    VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+    VkClearValue clearColor;
+    memset(&clearColor, 0, sizeof(clearColor));
+    clearColor.color.float32[3] = 1.0f;
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
