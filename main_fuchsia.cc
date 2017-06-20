@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1080;
+const int HEIGHT = 720;
 
 
 
@@ -57,18 +57,6 @@ public:
       free(instance_extensions);
     }
 
-    /*unsigned int glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    for (unsigned int i = 0; i < glfwExtensionCount; i++) {
-        extensions.push_back(glfwExtensions[i]);
-    }
-
-    if (isValidating()) {
-        extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    }*/
-
     return extensions;
   }
 private:
@@ -78,13 +66,51 @@ private:
 int main(int argc, char** argv) {
   
   try {
-    std::cout << "Hello from shadertoy harness!" << std::endl;
+    uint32_t width = WIDTH;
+    uint32_t height = HEIGHT;
+    uint32_t max_num_frames = 300;
+
+    // parse args.
+    for (int i=1; i<argc; i++) {
+      if (argv[i][0] == '-') {
+        switch( argv[i][1]) {
+          case 's':
+            width = atoi(argv[i+1]);
+            height = atoi(argv[i+2]);
+            i++;
+            break;
+          case 'f':
+            max_num_frames = atoi(argv[i+1]);
+            break;
+          case 'h':
+            std::cout << "Usage: " << argv[0] 
+              << "[-s <width> <height]"
+              << "[-f <max frames to render>]"
+              << std::endl;
+            return 0;
+            break;
+          default:
+            std::cerr << "Unknown argument: " << argv[i] << std::endl;
+        }
+        i++;
+      }
+    }
+
+    std::cout << "Hello from Vulkan shadertoy harness!" << std::endl;
 
     std::unique_ptr<ShaderToyVulkanHarnessFuchsia>
             shadertoy(new ShaderToyVulkanHarnessFuchsia(true));
 
-    shadertoy->init(WIDTH, HEIGHT);
 
+    shadertoy->init(width, height);
+
+    uint32_t elapsed_frames = 0;
+
+    while (elapsed_frames < max_num_frames) {
+      shadertoy->updateUniformBuffer();
+      shadertoy->drawFrame();
+      elapsed_frames++;
+    }
 
   } catch (const std::runtime_error& e) {
     std::cerr << e.what() << std::endl;
