@@ -16,6 +16,10 @@
 #include <set>
 #include <array>
 
+// built-in shaders.
+#include "shadertoy_spv.h"
+#include "cartoon_spv.h"
+
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
@@ -630,8 +634,14 @@ void ShaderToyVulkanHarness::createDescriptorSetLayout() {
 }
 
 void ShaderToyVulkanHarness::createGraphicsPipeline() {
-    auto vertShaderCode = readFile("shaders/shadertoy.spv");
-    auto fragShaderCode = readFile("shaders/river.spv");
+    //auto vertShaderCode = //readFile("shaders/shadertoy.spv");
+    //auto fragShaderCode = readFile("shaders/river.spv");
+
+    std::vector<char> vertShaderCode;
+    vertShaderCode.assign(kShader_vert, kShader_vert+kShader_vert_size);
+
+    std::vector<char> fragShaderCode;
+    fragShaderCode.assign(kShader_cartoon, kShader_cartoon+kShader_cartoon_size);
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
