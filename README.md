@@ -35,7 +35,7 @@ float iChannel1 = 1.0;
 
 - texture loading does not work yet so shaders must be modified to not look at the iChannelx variables.
 
-# Building
+# Building (Linux)
 
 You will need to build glfw for your platform. Best is to grab the source and compile it.
 
@@ -46,6 +46,12 @@ cmake .
 make
 
 ```
+
+# Building (Fuchsia)
+
+1. git clone this repo into //third_party
+2. Copy 'shadertoy_harness' from this repo into //packages/gn/
+3. add 'shadertoy_harness' to your -m as a module when running gen.py
 
 # Credits
 
