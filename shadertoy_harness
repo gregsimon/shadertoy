@@ -1,0 +1,16 @@
+{
+    "imports": [
+        "magma",
+        "magma-common",
+        "vulkan_loader_and_layers"
+    ],
+    "binaries": [
+    {
+        "binary": "shadertoy_harness",
+        "bootfs_path": "apps/shadertoy_harness"
+    }
+    ],
+    "packages": {
+        "shadertoy_harness": "//third_party/shadertoy_harness"
+    }
+}

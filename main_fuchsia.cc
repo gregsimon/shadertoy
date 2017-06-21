@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-const int WIDTH = 1080;
-const int HEIGHT = 720;
+const int WIDTH = 2160;
+const int HEIGHT = 1440;
 
 
 
@@ -28,8 +28,6 @@ public:
 
   virtual std::vector<const char*> getRequiredExtensions() {
     std::vector<const char*> extensions;
-
-    std::cout << "getRequiredExtensions" << std::endl;
 
     VkResult err;
     uint32_t instance_extension_count = 0;
@@ -68,7 +66,7 @@ int main(int argc, char** argv) {
   try {
     uint32_t width = WIDTH;
     uint32_t height = HEIGHT;
-    uint32_t max_num_frames = 300;
+    uint32_t max_num_frames = 100;
 
     // parse args.
     for (int i=1; i<argc; i++) {

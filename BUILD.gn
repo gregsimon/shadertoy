@@ -6,8 +6,8 @@ import("//magma/gnbuild/magma.gni")
 
 use_vulkan_loader = false
 
-executable("shaderharness") {
-  include_dirs = [ "." ]
+executable("shadertoy_harness") {
+  include_dirs = [ ".", "shaders" ]
 
   defines = [ "VK_USE_PLATFORM_MAGMA_KHR" ]
 
@@ -23,9 +23,6 @@ executable("shaderharness") {
     "$magma_build_root/src/magma_util/platform:trace",
     "//magma:vulkan",
   ]
-
-  if (magma_enable_tracing) {
-  }
 
   if (use_vulkan_loader) {
     deps += [ "$magma_build_root:vulkan" ]
