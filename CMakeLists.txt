@@ -25,7 +25,7 @@ add_shader(shaders/river.frag shaders/river.spv)
 
 
 
-include_directories($ENV{VULKAN_SDK}/include)
+include_directories($ENV{VULKAN_SDK}/include shaders)
 LINK_DIRECTORIES($ENV{VULKAN_SDK}/lib)
 
 SET(CMAKE_CXX_FLAGS "-std=c++11") 
