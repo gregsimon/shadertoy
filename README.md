@@ -1,6 +1,6 @@
-# Shaderharness
+# Shadertoy Harness for Vulkan
 
-Basic harness for running shaders from ShaderToy on a Vulkan API. Note the shaders don't come over for free; they must be "reworked" as vulkan fragment shaders. This involves
+Basic harness for running shaders from ShaderToy on the Vulkan API. Note the shaders don't come over for free; they must be "reworked" as vulkan fragment shaders. This usually involves
 
 1. Adding a header to the top indicating it's a vulkan shader:
 ```
@@ -33,7 +33,7 @@ float iChannel1 = 1.0;
 
 ## TODO
 
-- make the shader inputs more compatible looking so less code in the ported shaders has to change.
+- texture loading does not work yet so shaders must be modified to not look at the iChannelx variables.
 
 # Building
 
@@ -46,3 +46,10 @@ cmake .
 make
 
 ```
+
+# Credits
+
+This repo contains other works with their own Copyrights and licenses:
+
+- glm, a linear mathematics library used for GL/Vulkan programming
+- various shaders from shadertoy.com
