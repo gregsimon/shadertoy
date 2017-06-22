@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <chrono>
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -74,11 +75,20 @@ int main() {
     shadertoy->init(WIDTH, HEIGHT);
 
     // Main loop
+    auto last_time = std::chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
 
       shadertoy->updateUniformBuffer();
       shadertoy->drawFrame();
+      auto this_time = std::chrono::high_resolution_clock::now();
+
+      float delta = std::chrono::duration_cast<std::chrono::milliseconds>(this_time - last_time).count() / 1000.0f;
+      float fps = 1.0f / delta;
+
+      std::cout << fps << " FPS" << std::endl;
+
+      last_time = this_time;
     }
 
 
