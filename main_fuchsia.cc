@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
     uint32_t width = WIDTH;
     uint32_t height = HEIGHT;
     uint32_t max_num_frames = 100;
+    std::string spv_filename;
 
     // parse args.
     for (int i=1; i<argc; i++) {
@@ -84,6 +85,7 @@ int main(int argc, char** argv) {
             std::cout << "Usage: " << argv[0] 
               << "[-s <width> <height]"
               << "[-f <max frames to render>]"
+              << " [spv filename]"
               << std::endl;
             return 0;
             break;
@@ -91,6 +93,8 @@ int main(int argc, char** argv) {
             std::cerr << "Unknown argument: " << argv[i] << std::endl;
         }
         i++;
+      } else {
+        spv_filename = argv[i];
       }
     }
 
@@ -100,7 +104,7 @@ int main(int argc, char** argv) {
             shadertoy(new ShaderToyVulkanHarnessFuchsia(true));
 
 
-    shadertoy->init(width, height);
+    shadertoy->init(width, height, spv_filename);
 
     uint32_t elapsed_frames = 0;
 
