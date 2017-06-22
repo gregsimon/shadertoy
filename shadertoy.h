@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
-
+#include <string>
 
 struct QueueFamilyIndices {
     int graphicsFamily = -1;
@@ -29,7 +29,7 @@ public:
   virtual VkSurfaceKHR createSurface(VkInstance) = 0;
   virtual std::vector<const char*> getRequiredExtensions() = 0;
 
-  void init(int width, int height);
+  void init(int width, int height, const std::string& shaderSPVfile = std::string());
   void drawFrame();
   void updateUniformBuffer();
   void resize(int width, int height);
@@ -79,6 +79,7 @@ private:
 private:
   int _width;
   int _height;
+  std::string _shaderSPVFn;
 
   bool _isValidating = false;
 

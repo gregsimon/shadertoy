@@ -110,9 +110,10 @@ ShaderToyVulkanHarness::~ShaderToyVulkanHarness() {
   cleanup();
 }
 
-void ShaderToyVulkanHarness::init(int width, int height) {
+void ShaderToyVulkanHarness::init(int width, int height, const std::string& shaderSPVfileName) {
   _width = width;
   _height = height;
+  _shaderSPVFn = shaderSPVfileName;
 
   createInstance();
   setupDebugCallback();
@@ -634,14 +635,14 @@ void ShaderToyVulkanHarness::createDescriptorSetLayout() {
 }
 
 void ShaderToyVulkanHarness::createGraphicsPipeline() {
-    //auto vertShaderCode = //readFile("shaders/shadertoy.spv");
-    //auto fragShaderCode = readFile("shaders/river.spv");
-
     std::vector<char> vertShaderCode;
     vertShaderCode.assign(kShader_vert, kShader_vert+kShader_vert_size);
 
     std::vector<char> fragShaderCode;
-    fragShaderCode.assign(kShader_cartoon, kShader_cartoon+kShader_cartoon_size);
+    if (_shaderSPVFn.size())
+      fragShaderCode = readFile(_shaderSPVFn);
+    else
+      fragShaderCode.assign(kShader_cartoon, kShader_cartoon+kShader_cartoon_size);
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);

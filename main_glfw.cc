@@ -58,13 +58,41 @@ static void onWindowResized(GLFWwindow* window, int width, int height) {
 }
 
 
-int main() {
+int main(int argc, char** argv) {
   ShaderToyVulkanHarness * shadertoy;
+  int width = WIDTH;
+  int height = HEIGHT;
+  std::string spv_filename;
+
+  // parse args.
+  for (int i=1; i<argc; i++) {
+    if (argv[i][0] == '-') {
+      switch( argv[i][1]) {
+        case 's':
+          width = atoi(argv[i+1]);
+          height = atoi(argv[i+2]);
+          i++;
+          break;
+        case 'h':
+          std::cout << "Usage: " << argv[0] 
+            << "[-s <width> <height]"
+            << " [spv filename]"
+            << std::endl;
+          return 0;
+          break;
+        default:
+          std::cerr << "Unknown argument: " << argv[i] << std::endl;
+      }
+      i++; // skip over the (default) single value
+    } else {
+      spv_filename = argv[i];
+    }
+  }
 
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Shadertoy Vulkan", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(width, height, "Shadertoy Vulkan", nullptr, nullptr);
 
   try {
     shadertoy = new ShaderToyVulkanHarnessGLFW(window,/* validating = */ true);
@@ -72,7 +100,7 @@ int main() {
     glfwSetWindowUserPointer(window, shadertoy);
     glfwSetWindowSizeCallback(window, onWindowResized);
 
-    shadertoy->init(WIDTH, HEIGHT);
+    shadertoy->init(width, height, spv_filename);
 
     // Main loop
     auto last_time = std::chrono::high_resolution_clock::now();
